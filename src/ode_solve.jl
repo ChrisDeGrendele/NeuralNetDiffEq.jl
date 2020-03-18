@@ -69,14 +69,27 @@ function DiffEqBase.solve(
     else
         dfdx = (t,θ) -> (phi(t+sqrt(eps(t)),θ) - phi(t,θ))/sqrt(eps(t))
     end
-    
+
     function inner_loss(t,θ)
         sum(abs2,dfdx(t,θ) - f(phi(t,θ),p,t))
     end
+
+    function loss(θ)
+        include_frac = .50
+        sizeof = size(ts)[1]
+        total = 0
+         for t in 1:round(include_frac*sizeof, digits=0)
+             elem = convert(int64, round(sizeof*rand(1)[1], digits=0))
+             println(t[elem])
+             total += ts[elem]^2 #same as sum(abs2, x)
+         end
+        return total
+    end
+
     loss(θ) = sum(abs2,inner_loss(t,θ) for t in ts) # sum(abs2,phi(tspan[1],θ) - u0)
 
     cb = function (p,l)
-        verbose && println("Current loss is: $l")
+        verbose && println("Current loss is (correct version): $l")
         l < abstol
     end
     res = DiffEqFlux.sciml_train(loss, initθ, opt; cb = cb, maxiters=maxiters, alg.kwargs...)
