@@ -75,14 +75,13 @@ function DiffEqBase.solve(
     end
 
     function loss(θ)
-        include_frac = .50
+        include_frac = .75
         sizeof = size(ts)[1]
         total = 0
-         for t in 1:round(include_frac*sizeof, digits=0)
-             elem = convert(int64, round(sizeof*rand(1)[1], digits=0))
-             println(t[elem])
-             total += ts[elem]^2 #same as sum(abs2, x)
-         end
+        for t in 1:round(include_frac*sizeof, digits=0)
+            elem = convert(Int64, round(sizeof*rand(1)[1] + 0.5, digits=0))
+            total += inner_loss(ts[elem],θ)^2
+        end
         return total
     end
 
