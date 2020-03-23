@@ -75,21 +75,28 @@ function DiffEqBase.solve(
     end
 
     function loss(θ)
-        include_frac = .75
-        sizeof = size(ts)[1]
-        total = 0
-        for t in 1:round(include_frac*sizeof, digits=0)
-            elem = convert(Int64, round(sizeof*rand(1)[1] + 0.5, digits=0))
-            total += inner_loss(ts[elem],θ)^2
-        end
-        return total
+     include_frac = .75
+     sizeof = size(ts)[1]
+     total = 0
+      for t in 1:round(include_frac*sizeof, digits=0)
+          elem = convert(Int64, round(sizeof*rand(1)[1] + 0.5, digits=0))
+          total += inner_loss(ts[elem],θ)^2
+      end
+     return total
     end
 
-    loss(θ) = sum(abs2,inner_loss(t,θ) for t in ts) # sum(abs2,phi(tspan[1],θ) - u0)
+
+    function predict_rd(p)
+      Array(concrete_solve(prob,Tsit5(),u0,p,saveat=0.1,reltol=1e-4))
+    end
+    function loss_rd(p)
+      sum(abs2,x-1 for x in predict_rd(p))
+    end
 
     cb = function (p,l)
-        verbose && println("Current loss is (correct version): $l")
+        verbose && println("Current loss is: $l")
         l < abstol
+        #display(loss_rd())
     end
     res = DiffEqFlux.sciml_train(loss, initθ, opt; cb = cb, maxiters=maxiters, alg.kwargs...)
 
